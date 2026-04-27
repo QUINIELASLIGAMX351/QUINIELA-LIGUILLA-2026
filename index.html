@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUINIELAS 351 - Liguilla Clausura 2026</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #000; margin: 0; padding: 15px; color: #fff; }
+.container { max-width: 500px; margin: 0 auto; background: #1a1a1a; padding: 20px; border-radius: 10px; box-shadow: 0 2px 15px rgba(0,104,71,0.3); border-top: 6px solid #006847; }
+    h1 { text-align: center; color: #fff; margin: 0 0 5px 0; font-size: 28px; text-shadow: 0 0 10px rgba(206,17,38,0.5); }
+.subtitle { text-align: center; margin-bottom: 20px; font-weight: bold; color: #CE1126; }
+    input[type="text"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #006847; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #2a2a2a; color: #fff; }
+    input[type="text"]::placeholder { color: #888; }
+.partido { background: #2a2a2a; padding: 15px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid #CE1126; }
+.equipos { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.equipo { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 5px; }
+.equipo img { width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 3px rgba(255,255,255,0.3)); }
+.equipo span { font-weight: bold; font-size: 13px; text-align: center; color: #fff; }
+.vs { font-weight: bold; color: #006847; margin: 0 10px; font-size: 16px; }
+.botones { display: flex; justify-content: space-around; gap: 8px; }
+.botones button { flex: 1; padding: 12px 5px; border: 2px solid #006847; background: #1a1a1a; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+.botones button.activo { background: #006847; color: white; box-shadow: 0 0 10px rgba(0,104,71,0.6); }
+.info { text-align: center; margin: 15px 0; font-weight: bold; color: #CE1126; }
+.btn-whatsapp { width: 100%; padding: 15px; background: linear-gradient(90deg, #006847 0%, #CE1126 100%); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 15px rgba(206,17,38,0.4); }
+.btn-secundario { width: 100%; padding: 12px; background: #006847; color: white; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; }
+    #seccionAcumuladas { display: none; margin-top: 20px; border-top: 2px dashed #006847; padding-top: 15px; }
+.quiniela-item { background: #2a2a2a; padding: 10px; margin-bottom: 8px; border-radius: 6px; font-size: 14px; border-left: 3px solid #CE1126; }
+.quiniela-item-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #fff; }
+.btn-borrar { background: #CE1126; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+    h3 { color: #fff; }
+    a { color: #006847; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🇲🇽 QUINIELAS 351 🇲🇽</h1>
+    <div class="subtitle">LIGUILLA C2026 - Cuartos de Final</div>
+
+    <input type="text" id="nombre" placeholder="Escribe tu nombre">
+
+    <div id="partidos"></div>
+
+    <div class="info" id="faltantes">Faltan 4 series</div>
+
+    <button class="btn-secundario" id="btnAcumular">ACUMULAR QUINIELA</button>
+    <button class="btn-secundario" id="btnLimpiar">LIMPIAR</button>
+
+    <button class="btn-whatsapp" id="btnEnviar">
+      <span>📲</span> ENVIAR POR WHATSAPP
+    </button>
+
+    <div id="seccionAcumuladas">
+      <h3>Quinielas Acumuladas: <span id="total">0</span> | Total: $<span id="totalDinero">0</span></h3>
+      <div id="listaAcumuladas"></div>
+      <button class="btn-secundario" id="btnBorrarTodas">BORRAR TODAS</button>
+    </div>
+
+    <div style="text-align: center; margin-top: 15px;">
+      <a href="https://chat.whatsapp.com/Fce22ZJmTDW6hppPoPaWCA?mode=gi_t" target="_blank">Unirse al grupo de WhatsApp</a>
+    </div>
+  </div>
+
+<script>
+  const PRECIO = 20;
+  const NUMERO_WSP = "523513743191";
+  const LINK_GRUPO_WSP = "https://chat.whatsapp.com/Fce22ZJmTDW6hppPoPaWCA?mode=gi_t";
+
+  const partidos = [
+    { serie: "1", local: "PUMAS", visita: "AMÉRICA", imgL: "pumas", imgV: "america" },
+    { serie: "2", local: "CHIVAS", visita: "TIGRES", imgL: "chivas", imgV: "tigres" },
+    { serie: "3", local: "CRUZ AZUL", visita: "ATLAS", imgL: "cruzazul", imgV: "atlas" },
+    { serie: "4", local: "PACHUCA", visita: "TOLUCA", imgL: "pachuca", imgV: "toluca" }
+  ];
+
+  let resultados = {};
+  let acumuladas = JSON.parse(localStorage.getItem('quinielas_351_c2026') || '[]');
+
+  const divPartidos = document.getElementById('partidos');
+  partidos.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'partido';
+    div.innerHTML = `
+      <div class="equipos">
+        <div class="equipo">
+          <img src="escudos/${p.imgL}.png" alt="${p.local}" onerror="this.style.display='none'">
+          <span>${p.local}</span>
+        </div>
+        <div class="vs">VS</div>
+        <div class="equipo">
+          <img src="escudos/${p.imgV}.png" alt="${p.visita}" onerror="this.style.display='none'">
+          <span>${p.visita}</span>
+        </div>
+      </div>
+      <div class="botones">
+        <button data-p="${i}" data-r="L">${p.local}</button>
+        <button data-p="${i}" data-r="E">EMPATE</button>
+        <button data-p="${i}" data-r="V">${p.visita}</button>
+      </div>
+    `;
+    divPartidos.appendChild(div);
+  });
+
+  function actualizarFaltantes() {
+    const faltan = 4 - Object.keys(resultados).length;
+    document.getElementById('faltantes').textContent = faltan > 0? `Faltan ${faltan} series` : 'Listo para acumular ✓';
+  }
+
+  document.querySelectorAll('.botones button').forEach(btn => {
+    btn.onclick = () => {
+      const p = btn.dataset.p;
+      resultados[p] = btn.dataset.r;
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('activo'));
+      btn.classList.add('activo');
+      actualizarFaltantes();
+    };
+  });
+
+  document.getElementById('btnAcumular').onclick = () => {
+    const nombre = document.getElementById('nombre').value.trim();
+    if (!nombre) return alert('Pon tu nombre primero');
+    if (Object.keys(resultados).length < 4) return alert('Marca las 4 series');
+
+    acumuladas.push({
+      nombre,
+      resultados: {...resultados},
+      fecha: new Date().toLocaleString('es-MX')
+    });
+    localStorage.setItem('quinielas_351_c2026', JSON.stringify(acumuladas));
+    actualizarAcumuladas();
+    limpiarActual();
+  };
+
+  document.getElementById('btnLimpiar').onclick = limpiarActual;
+
+  function limpiarActual() {
+    document.getElementById('nombre').value = '';
+    resultados = {};
+    document.querySelectorAll('.botones button').forEach(b => b.classList.remove('activo'));
+    actualizarFaltantes();
+  }
+
+  function generarMensaje() {
+    let mensaje = `*QUINIELAS 351 - LIGUILLA C2026*%0A`;
+    mensaje += `Total: ${acumuladas.length} x $${PRECIO} = $${acumuladas.length * PRECIO}%0A%0A`;
+
+    acumuladas.forEach((q, i) => {
+      mensaje += `*${i+1}. ${q.nombre}*%0A`;
+      partidos.forEach((p, j) => {
+        let res = q.resultados[j];
+        let texto = res === 'L'? p.local : res === 'V'? p.visita : 'EMPATE';
+        mensaje += `${p.local} vs ${p.visita}: ${texto}%0A`;
+      });
+      mensaje += `%0A`;
+    });
+    return mensaje;
+  }
+
+  function actualizarAcumuladas() {
+    const seccion = document.getElementById('seccionAcumuladas');
+    const lista = document.getElementById('listaAcumuladas');
+
+    if (acumuladas.length === 0) {
+      seccion.style.display = 'none';
+      return;
+    }
+
+    seccion.style.display = 'block';
+    document.getElementById('total').textContent = acumuladas.length;
+    document.getElementById('totalDinero').textContent = acumuladas.length * PRECIO;
+    lista.innerHTML = '';
+
+    acumuladas.forEach((q, i) => {
+      let juegos = '';
+      partidos.forEach((p, j) => {
+        let res = q.resultados[j];
+        juegos += `${p.local.substring(0,3)}-${res}-${p.visita.substring(0,3)} `;
+      });
+
+      const div = document.createElement('div');
+      div.className = 'quiniela-item';
+      div.innerHTML = `
+        <div class="quiniela-item-header">
+          <span>${i+1}. ${q.nombre} - $${PRECIO}</span>
+          <button class="btn-borrar" onclick="borrarAcumulada(${i})">X</button>
+        </div>
+        <div style="color: #ccc;">${juegos}</div>
+      `;
+      lista.appendChild(div);
+    });
+  }
+
+  window.borrarAcumulada = (i) => {
+    if (confirm(`¿Borrar quiniela de ${acumuladas[i].nombre}?`)) {
+      acumuladas.splice(i, 1);
+      localStorage.setItem('quinielas_351_c2026', JSON.stringify(acumuladas));
+      actualizarAcumuladas();
+    }
+  };
+
+  document.getElementById('btnBorrarTodas').onclick = () => {
+    if (acumuladas.length > 0 && confirm('¿Borrar TODAS las quinielas?')) {
+      acumuladas = [];
+      localStorage.removeItem('quinielas_351_c2026');
+      actualizarAcumuladas();
+    }
+  };
+
+  document.getElementById('btnEnviar').onclick = () => {
+    if (acumuladas.length === 0) return alert('Acumula al menos 1 quiniela primero');
+    const mensaje = generarMensaje();
+    const url = `https://wa.me/${NUMERO_WSP}?text=${mensaje}`;
+    window.open(url, '_blank');
+  };
+
+  actualizarAcumuladas();
+  actualizarFaltantes();
+</script>
+</body>
+</html>
